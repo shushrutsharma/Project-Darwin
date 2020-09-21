@@ -33,24 +33,24 @@ function displayCandidateList (result) {
 function loadCandidateList () {
     jobId = parseInt(document.getElementById("meta").innerText);
     
-    fetch("http://localhost:5000/data/admin/getCandidates/" + jobId.toString(), { method: 'GET' })
+    fetch("https://project-darwin.azurewebsites.net/data/admin/getCandidates/" + jobId.toString(), { method: 'GET' })
     .then(response => response.json())
-    .then(result => displayCandidateList(result))
+    .then((result) => {
+        displayCandidateList(result);
+        console.log("Here");
+        getJobStats();
+        document.getElementById("selecttop").setAttribute("onclick", "selectCandy();");
+    })
     .catch(error => console.log('error', error));
 }
 
 function getResume (id) {
     jobId = parseInt(document.getElementById("meta").innerText);
     key = jobId.toString() + "_" + id.toString();
-    window.open("http://localhost:5000/data/getResume/" + key.toString())
+    window.open("https://project-darwin.azurewebsites.net/data/getResume/" + key.toString())
 }
 
 function drawPercentile (obj) {
-    // const percentile = (arr, val) => (100 * arr.reduce((acc, v) => acc + (v < val ? 1 : 0) + (v === val ? 0.5 : 0), 0)) / arr.length;
-    // per = []
-    // for (i=0;i<ovr.length;i++) {
-    //     per.push(percentile (ovr, ovr[i]));
-    // }
     var trace1 = {
         x: obj['x'],
         y: obj['y'],
@@ -99,6 +99,7 @@ function drawPlots (result) {
 }
 
 function getJobStats () {
+    console.log("Here Again");
     jobId = parseInt(document.getElementById("meta").innerText);
 
     var requestOptions = {
@@ -106,8 +107,40 @@ function getJobStats () {
         redirect: 'follow'
     };
       
-    fetch("http://localhost:5000/data/admin/getJobStats/" + jobId.toString(), requestOptions)
+    fetch("https://project-darwin.azurewebsites.net/data/admin/getJobStats/" + jobId.toString(), requestOptions)
     .then(response => response.json())
     .then((result) => drawPlots(result))
+    .catch(error => console.log('error', error));
+}
+
+function selectCandy () {
+    document.getElementById("overlay").style.display = "flex";
+    document.getElementById("emailqt").setAttribute("max", (document.getElementsByClassName("candy-mail").length-1).toString())
+}
+
+function sendMails () {
+    var allEmailElems = document.getElementsByClassName("candy-mail");
+    var allEmails = [];
+    for (i=0; i<allEmailElems.length; i++) {
+        allEmails.push(allEmailElems[i].innerText.toString());
+    }
+    valEma = parseInt(document.getElementById("emailqt").value) + 1
+    // console.log(valEma)
+    allEmails = allEmails.slice(1, valEma);
+    console.log(allEmails);
+
+    var myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+
+    fetch("https://project-darwin.azurewebsites.net/sendEmails", {
+            method: 'POST',
+            headers: myHeaders,
+            body: JSON.stringify({"emails":allEmails})
+    })
+    .then(response => response.text())
+    .then((result) => {
+        document.getElementById("overlay").style.display = "none";
+        alert('Mails Sent!');
+    })
     .catch(error => console.log('error', error));
 }
